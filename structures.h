@@ -4,19 +4,29 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <algorithm>
+#include <iterator>
 #include <map>
 
 using namespace std;
 
+/////////////////////////////////////////////////////////////////////
+//////////////////////   AUXILIARY FUNCTIONS   //////////////////////
+
+void mergeSort()
+
+/////////////////////////////////////////////////////////////////////
+//////////////////////   CLASSES DEFINITIONS   //////////////////////
+
 class Instance {
 	private:
 		int identifier;
-		int attribNumber;
+		int attribCount;
 		float* attribs;
 		int instanceClass;
-		bool forTraining;
 	public:
 		Instance(int id, int attNum);
+		Instance(const Instance& another);
 		~Instance();
 		string loadAttribs(string attribLine);
 		float* getAttribs();
@@ -28,14 +38,28 @@ class Instance {
 
 class KNN {
 	private:
-		
-}
+		int instanceCount;
+		Instance* instances;
+	public:
+		KNN(int instCount)
+};
+
+/////////////////////////////////////////////////////////////////////
+////////////////////// CLASSES IMPLEMENTATIONS //////////////////////
 
 Instance::Instance(int id, int attNum) {
 	identifier = id;
-	attribNumber = attNum;
+	attribCount = attNum;
 	instanceClass = -1;
-	attribs = new float[attribNumber];
+	attribs = new float[attribCount];
+}
+
+Instance::Instance(const Instance& another) {
+	identifier = another.identifier;
+	attribCount = another.attribCount;
+	instanceClass = another.instanceClass;
+	attribs = new float[attribCount];
+	copy(begin(another.attribs), end(another.attribs), begin(attribs));
 }
 
 Instance::~Instance() {
@@ -44,7 +68,7 @@ Instance::~Instance() {
 
 string Instance::loadAttribs(string attribLine) {
 	stringstream ss(attribLine);
-	for (int i = 0; i < attribNumber; i++) {
+	for (int i = 0; i < attribCount; i++) {
 		if (ss.good()) {
 			ss >> attribs[i];
 			if (ss.peek() == ',') {
@@ -62,7 +86,7 @@ float* Instance::getAttribs() {
 }
 
 int Instance::getAttNumber() {
-	return attribNumber;
+	return attribCount;
 }
 
 int Instance::getClass() {
@@ -76,5 +100,8 @@ int Instance::getId() {
 int Instance::setClass(int instClass) {
 	instanceClass = instClass;
 }
+
+/////////////////////////////////////////////////////////////////////
+//////////////////////       END OF FILE       //////////////////////
 
 #endif
