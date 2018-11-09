@@ -79,6 +79,7 @@ class KNN {
 		~KNN();
 		int classify(Instance instance);
 		int classify(Instance instance, int nnCount);
+		
 };
 
 /////////////////////////////////////////////////////////////////////
