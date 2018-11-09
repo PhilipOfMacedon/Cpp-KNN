@@ -6,14 +6,46 @@
 #include <string>
 #include <algorithm>
 #include <iterator>
-#include <map>
+#include <tuple>
 
 using namespace std;
 
 /////////////////////////////////////////////////////////////////////
 //////////////////////   AUXILIARY FUNCTIONS   //////////////////////
 
-void mergeSort()
+void mergeSort(tuple<int, float>* array, int length) {
+	mergeSort(array, 0, length - 1);
+}
+
+void mergeSort(tuple<int, float>* array, int start, int end) {
+	if ((end - start) > 1) {
+		int midpoint = (end - start) / 2;
+		mergeSort(array, start, midpoint - 1);
+		mergeSort(array, midpoint, end);
+		merge(array, start, end);
+	}
+}
+
+void merge(tuple<int, float>* array, int start, int end) {
+	tuple<int, float>* temp = new tuple<int, float>[end - start + 1];
+	int midpoint = (end - start) / 2;
+	int count1 = start;
+	int count2 = midpoint;
+	for (int i = 0; i <= (end - start); i++) {
+		if ((count1 < midpoint and count2 > end)
+		 or (count1 < midpoint and get<1>(array[count1]) < get<1>(array[count2]))) {
+			temp[i] = array[count1];
+			count1++;
+		} else {
+			temp[i] = array[count2];
+			count2++;
+		}
+	}
+	for (int i = 0; i <= (end - start); i++) {
+		array[start + i] = temp[i];
+	}
+	delete[] temp;
+}
 
 /////////////////////////////////////////////////////////////////////
 //////////////////////   CLASSES DEFINITIONS   //////////////////////
@@ -38,10 +70,15 @@ class Instance {
 
 class KNN {
 	private:
-		int instanceCount;
-		Instance* instances;
+		int samplesCount;
+		int testedCount;
+		Instance* trainingSamples;
+		Instance* testingInstances;
 	public:
-		KNN(int instCount)
+		KNN(string fileName, float trainingSampleRatio);
+		~KNN();
+		int classify(Instance instance);
+		int classify(Instance instance, int nnCount);
 };
 
 /////////////////////////////////////////////////////////////////////
