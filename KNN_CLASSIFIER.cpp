@@ -11,7 +11,7 @@ int classCount = 2;
 string fileName = "instances/iris.data";
 int instCount = 150;
 int attribCount = 4;
-float ratio = 0.6;
+float ratio = 0.9;
 bool isNumeric = false;
 int classCount = 3;
 
@@ -50,15 +50,15 @@ int main(int argc, char const **argv) {
 		labels.push_back("Iris-setosa");
 		labels.push_back("Iris-versicolor");
 		labels.push_back("Iris-virginica");
-
+		
 	}
 	ifstream input(fileName.c_str());
 	if (input.good()) {
 		input.close();
 		KNN classifier(fileName, instCount, attribCount, ratio, labels, isNumeric);
-		cout << "Classifying tests... ";
+		cout << "Classifying tests.";
 		classifier.classifyAllTests();
-		cout << "Done!" << endl;
+		cout << " Done!" << endl;
 		classifier.printConfusionMatrix();
 	} else {
 		cout << "Problem reading file." << endl;

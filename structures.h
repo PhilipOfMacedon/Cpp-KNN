@@ -18,11 +18,11 @@ using namespace std;
 
 void merge(tuple<int, float>* array, int start, int end) {
 	tuple<int, float>* temp = new tuple<int, float>[end - start + 1];
-	int midpoint = (end - start) / 2;
+	int midpoint = start + (end - start) / 2;
 	int count1 = start;
-	int count2 = midpoint;
+	int count2 = midpoint + 1;
 	for (int i = 0; i <= (end - start); i++) {
-		if (count1 < midpoint) {
+		if (count1 <= midpoint) {
 			if (count2 > end or get<1>(array[count1]) <= get<1>(array[count2])) {
 				temp[i] = array[count1];
 				count1++;
@@ -44,8 +44,8 @@ void merge(tuple<int, float>* array, int start, int end) {
 void mergeSort(tuple<int, float>* array, int start, int end) {
 	if ((end - start) > 1) {
 		int midpoint = start + (end - start) / 2;
-		mergeSort(array, start, midpoint - 1);
-		mergeSort(array, midpoint, end);
+		mergeSort(array, start, midpoint);
+		mergeSort(array, midpoint + 1, end);
 		merge(array, start, end);
 	}
 }
@@ -221,7 +221,9 @@ void KNN::loadFile(string fileName, int instCount, float ratio) {
 void KNN::initLabelMap() {
 	if (hasNumericClassNames) {
 		for (int i = 0; i < orderedLabels.size(); i++) {
-			cfMatrixLabels[(i + "")] = i;
+			stringstream ss;
+			ss << i;
+			cfMatrixLabels[ss.str()] = i;
 		}
 	} else {
 		for (int i = 0; i < orderedLabels.size(); i++) {
@@ -249,7 +251,6 @@ void KNN::generateConfusionMatrix() {
 	for (int i = 0; i < testingInstances.size(); i++) {
 		int line = cfMatrixLabels[testingInstances[i].getInstanceClass()];
 		int column = cfMatrixLabels[testingInstances[i].getClassifiedClass()];
-		cout << "L, C: " << line << ", " << column << endl;
 		confusionMatrix[line][column] = confusionMatrix[line][column] + 1;
 	}
 }
@@ -257,7 +258,7 @@ void KNN::generateConfusionMatrix() {
 float KNN::calculateEuclideanDistance(vector<float> u, vector<float> v) {
 	float distance = 0;
 	for (int i = 0; i < attribCount; i++) {
-		distance += (pow(u[i], 2) - pow(v[i], 2));
+		distance += (pow((u[i] - v[i]), 2));
 	}
 	return sqrt(distance);
 }
@@ -314,15 +315,26 @@ string KNN::classify(Instance& instance, int nnCount) {
 }
 
 void KNN::classifyAllTests() {
-	for (int i = 0; i < testingInstances.size(); i++) {
-		cout << classify(testingInstances[i]) << endl;
+	int nnCount = sqrt(trainingSamples.size());
+	if (classCount == 2 and nnCount % 2 == 0) {
+		nnCount++;
 	}
-	generateConfusionMatrix();
+	classifyAllTests(nnCount);
 }
 
 void KNN::classifyAllTests(int nnCount) {
+	int updateInterval = testingInstances.size()/30;
+	int intervalCount = 1;
 	for (int i = 0; i < testingInstances.size(); i++) {
 		classify(testingInstances[i], nnCount);
+		if (i > updateInterval * intervalCount) {
+			if (intervalCount % 3 != 0) {
+				cout << ".";
+			} else {
+				cout << intervalCount * 10 / 3 << "%";
+			}
+			intervalCount++;
+		}
 	}
 	generateConfusionMatrix();
 }
