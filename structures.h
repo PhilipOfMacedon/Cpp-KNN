@@ -345,9 +345,9 @@ void KNN::classifyAllTests(int nnCount) {
 		classify(testingInstances[i], nnCount);
 		if (i > updateInterval * intervalCount) {
 			if (intervalCount % 3 != 0) {
-				cout << ".";
+				cerr << ".";
 			} else {
-				cout << intervalCount * 10 / 3 << "%";
+				cerr << intervalCount * 10 / 3 << "%";
 			}
 			intervalCount++;
 		}

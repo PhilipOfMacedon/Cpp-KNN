@@ -23,22 +23,22 @@ int main(int argc, char const **argv) {
 			ifn.close();
 			cfn.close();
 			Configuration cfg(configFileName);
-			cout << "Reading file... ";
+			cerr << "Reading file... ";
 			KNN classifier(instanceFileName, cfg.instanceCount, cfg.attributeCount, 
 				cfg.trainingRatio, cfg.classNames, cfg.hasNumericClassNames);
-			cout << "Done!" << endl;
-			cout << "Classifying tests.";
+			cerr << "Done!" << endl;
+			cerr << "Classifying tests.";
 			classifier.classifyAllTests(cfg.nnCount);
-			cout << " Done!" << endl;
+			cerr << " Done!" << endl;
 			classifier.printConfusionMatrix();
 		} else {
-			cout << "Problem reading files." << endl;
+			cerr << "Problem reading files." << endl;
 		}
 	} else {
-		cout << "USAGE: " << argv[0] << " [INSTANCE FILE NAME] [CONFIGURATION FILE NAME]" << endl;
+		cerr << "USAGE: " << argv[0] << " [INSTANCE FILE NAME] [CONFIGURATION FILE NAME]" << endl;
 	}	
 
-	cout << endl;
+	cerr << endl;
 
 	return 0;
 }
