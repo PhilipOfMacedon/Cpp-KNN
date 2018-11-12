@@ -42,7 +42,7 @@ void merge(tuple<int, float>* array, int start, int end) {
 }
 
 void mergeSort(tuple<int, float>* array, int start, int end) {
-	if ((end - start) > 1) {
+	if ((end - start) > 0) {
 		int midpoint = start + (end - start) / 2;
 		mergeSort(array, start, midpoint);
 		mergeSort(array, midpoint + 1, end);
@@ -104,6 +104,21 @@ class KNN {
 		int getClassCount();
 		int** getConfusionMatrix();
 		void printConfusionMatrix();
+};
+
+class Configuration {
+	private:
+		void loadFile(string fileName);
+	public:
+		int instanceCount;
+		int attributeCount;
+		float trainingRatio;
+		bool hasNumericClassNames;
+		int nnCount;
+		int classCount;
+		vector<string> classNames;
+
+		Configuration(string fileName);
 };
 
 /////////////////////////////////////////////////////////////////////
@@ -208,6 +223,7 @@ void KNN::loadFile(string fileName, int instCount, float ratio) {
 		instances.push_back(Instance(line, attribCount));
 	}
 	input.close();
+	srand(time(NULL));
 	for (int trainingCount = instCount * ratio; trainingCount > 0; trainingCount--) {
 		int pos = rand() % instances.size();
 		trainingSamples.push_back(instances[pos]);
@@ -381,6 +397,60 @@ void KNN::printConfusionMatrix() {
 		cout << endl;
 	}
 }
+
+////////////////////// CLASS Configuration
+
+Configuration::Configuration(string fileName) {
+	loadFile(fileName);
+}
+
+void Configuration::loadFile(string fileName) {
+	instanceCount = 0;
+	attributeCount = 0;
+	trainingRatio = 0.6;
+	hasNumericClassNames = false;
+	nnCount = 0;
+
+	ifstream input(fileName.c_str());
+	string line;
+	while (input.good()) {
+		getline(input, line);
+		if (line[0] == '#') continue;
+		stringstream ss(line);
+		string statement;
+		ss >> statement;
+		if (statement.find("instCount") < 20) {
+			ss >> instanceCount;
+			nnCount = sqrt(instanceCount);
+		} else if (statement.find("attribCount") < 20) {
+			ss >> attributeCount;
+		} else if (statement.find("ratio") < 20) {
+			ss >> trainingRatio;
+		} else if (statement.find("isNumeric") < 20) {
+			ss >> statement;
+			if (statement == "true") {
+				hasNumericClassNames = true;
+			} else {
+				hasNumericClassNames = false;
+			}
+		} else if (statement.find("kValue") < 20) {
+			ss >> statement;
+			if (statement.find("set") >= 0) {
+				ss >> nnCount;
+			}
+		} else if (statement.find("classCount") < 20) {
+			ss >> classCount;
+		} else if (statement.find("classNames") < 20) {
+			while (ss.good()) {
+				ss >> statement;
+				classNames.push_back(statement);
+			}
+		}
+	}
+	input.close();
+}
+
+
 
 /////////////////////////////////////////////////////////////////////
 //////////////////////       END OF FILE       //////////////////////
