@@ -31,6 +31,7 @@ int main(int argc, char const **argv) {
 			classifier.classifyAllTests(cfg.nnCount);
 			cerr << " Done!" << endl;
 			classifier.printConfusionMatrix();
+			classifier.generateHTML();
 		} else {
 			cerr << "Problem reading files." << endl;
 		}

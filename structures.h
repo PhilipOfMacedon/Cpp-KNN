@@ -54,9 +54,37 @@ void mergeSort(tuple<int, float>* array, int length) {
 	mergeSort(array, 0, length - 1);
 }
 
+string loadHTMLHeader() {
+	ifstream input("res/header.template");
+	string header = "";
+	if (!input.good()) {
+		cerr << "HTML resource not found, skipping file generation." << endl;
+		return "";
+	}
+	while (input.good()) {
+		string line;
+		input >> line;
+		header += line + "\n";
+	}
+	return header;
+}
 
 /////////////////////////////////////////////////////////////////////
 //////////////////////   CLASSES DEFINITIONS   //////////////////////
+
+class Statistics {
+	public:
+		int successes;
+		int failures;
+		float accuracy;
+		float* recall;
+		float* precision;
+		float* f1Score;
+
+		Statistics(int** confusionMatrix, int classCount);
+		Statistics() {}
+		~Statistics();
+};
 
 class Instance {
 	private:
@@ -94,6 +122,9 @@ class KNN {
 		float calculateEuclideanDistance(vector<float> u, vector<float> v);
 		map<string, int> countClassOccurrences(tuple<int, float>* distances, int nnCount);
 		string getGreatestOccurrence(map<string, int> occurrences, tuple<int, float>* distances, int nnCount);
+		void generateCMTable(ofstream& output);
+		void generateICTable(ofstream& output);
+		void generateStatsReport(ofstream& output);
 	public:
 		KNN(string fileName, int instCount, int attCount, float ratio, vector<string> labels, bool isNumeric);
 		~KNN();
@@ -104,6 +135,7 @@ class KNN {
 		int getClassCount();
 		int** getConfusionMatrix();
 		void printConfusionMatrix();
+		void generateHTML();
 };
 
 class Configuration {
@@ -123,6 +155,53 @@ class Configuration {
 
 /////////////////////////////////////////////////////////////////////
 ////////////////////// CLASSES IMPLEMENTATIONS //////////////////////
+
+////////////////////// CLASS Statistics
+
+Statistics::Statistics(int** confusionMatrix, int classCount) {
+	float num = 0;
+	float den = 0;
+	successes = 0;
+	failures = 0;
+	recall = new float[classCount];
+	precision = new float[classCount];
+	f1Score = new float[classCount];
+
+	for (int i = 0; i < classCount; i++) {
+		recall[i] = 0;
+		precision[i] = 0;
+	}
+
+	for (int i = 0; i < classCount; i++) {
+		num += confusionMatrix[i][i];
+		for (int j = 0; j < classCount; j++) {
+			if (i == j) {
+				successes += confusionMatrix[i][j];
+			} else {
+				failures += confusionMatrix[i][j];
+			}
+			den += confusionMatrix[i][j];
+			recall[i] += confusionMatrix[i][j];
+			precision[j] += confusionMatrix[i][j];
+		}
+	}
+
+	accuracy = 100 * num / den;
+
+	for (int i = 0; i < classCount; i++) {
+		float auxR = confusionMatrix[i][i] / recall[i];
+		float auxP = confusionMatrix[i][i] / precision[i];
+		recall[i] = auxR * 100;
+		precision[i] = auxP * 100;
+		f1Score[i] = 200 * (auxR * auxP) / (auxR + auxP);
+	}
+}
+
+Statistics::~Statistics() {
+	delete[] recall;
+	delete[] precision;
+	delete[] f1Score;
+}
 
 ////////////////////// CLASS Instance
 
@@ -396,6 +475,117 @@ void KNN::printConfusionMatrix() {
 		}
 		cout << endl;
 	}
+}
+
+void KNN::generateCMTable(ofstream& output) {
+	int order = orderedLabels.size();
+	output << "<div class=\"col-md-4 col-md-offset-4\">\n";
+	output << "<h3>Confusion Matrix:</h3>\n";
+	output << "<table class=\"table table-bordered table-hover\">\n";
+	output << "<tbody>\n";
+	output << "<tr>\n<th></th>";
+	for (int i = 0; i < order; i++) {
+		output << "<th>" << orderedLabels[i] << "</th>\n";
+	}
+	output << "</tr>\n";
+	for (int i = 0; i < order; i++) {
+		output << "<tr>\n<th>" << orderedLabels[i] << "</th>\n";
+		for (int j = 0; j < order; j++) {
+			output << "<td";
+			if (i == j) {
+				output << " class=\"success\">";
+			} else {
+				output << ">";
+			}
+			output << confusionMatrix[i][j] << "</td>\n";
+		}
+		output << "</tr>\n";
+	}
+	output << "</tbody>\n</table>\n</div>\n<br>\n";
+}
+
+void KNN::generateICTable(ofstream& output) {
+	output << "<div class=\"col-md-12\" style=\"padding-left:60px;padding-right:60px;\">\n";
+	output << "<h3>Classified Instances:</h3>\n";
+	output << "<table class=\"table table-bordered table-hover\"\n>";
+	output << "<tbody>\n";
+	output << "<tr>\n<th>Instance #</th\n>";
+	output << "<th colspan=\"" << attribCount << "\">Parameters</th>\n";
+	output << "<th>Actual Class</th>\n";
+	output << "<th>Classified As</th>\n";
+	output << "</tr>\n";
+	for (int i = 0; i < testingInstances.size(); i++) {
+		string color;
+		if (testingInstances[i].getInstanceClass() == testingInstances[i].getClassifiedClass()) {
+			color = "success";
+		} else {
+			color = "danger";
+		}
+		output << "<tr class=\"" << color << "\">\n";
+		output << "<th>" << (i + 1) << "</th>";
+		vector<float> attribs = testingInstances[i].getAttribs();
+		for (int j = 0; j < attribs.size(); j++) {
+			output << "<td>" << attribs[j] << "</td>\n";
+		}
+		string storedName = testingInstances[i].getInstanceClass();
+		int id = cfMatrixLabels[storedName];
+		output << "<td>" << orderedLabels[id] << "</td>\n";
+		storedName = testingInstances[i].getClassifiedClass();
+		id = cfMatrixLabels[storedName];
+		output << "<td>" << orderedLabels[id] << "</td>\n";
+		output << "</tr>\n";
+	}
+	output << "</tbody>\n</table>\n</div>\n<br>\n";
+}
+
+void KNN::generateStatsReport(ofstream& output) {
+	Statistics stats(confusionMatrix, classCount);
+	output << "<div class=\"col-sm-2 col-sm-offset-5\">\n";
+	output << "<h3>Statistics:</h3>\n";
+	output << "<table class=\"table table-hover\">\n";
+	output << "<tbody>\n<tr class=\"info\">\n";
+	output << "<th>Correctly classified:</th>\n";
+	output << "<td>" << stats.successes << "</td>\n</tr>\n";
+	output << "<tr class=\"info\">\n<th>Incorrectly classified:</th>";
+    output << "<td>" << stats.failures << "</td>\n</tr>";
+    output << "<tr class=\"info\">\n<th>Total classified:</th>";
+    output << "<td>" << (stats.successes + stats.failures) << "</td>\n</tr>";
+    for (int i = 0; i < classCount; i++) {
+    	string tableLine;
+    	if (i % 2 == 0) {
+    		tableLine = "<tr class=\"active\">";
+    	} else {
+    		tableLine = "<tr>";
+    	}
+    	output << tableLine;
+    	output << "<th>" << orderedLabels[i] << " Recall:</th>\n";
+    	output << "<td>" << stats.recall[i] << "%</td>\n</tr>\n";
+    	output << tableLine;
+    	output << "<th>" << orderedLabels[i] << " Precision:</th>\n";
+    	output << "<td>" << stats.precision[i] << "%</td>\n</tr>\n";
+    	output << tableLine;
+    	output << "<th>" << orderedLabels[i] << " F1-score:</th>\n";
+    	output << "<td>" << stats.f1Score[i] << "%</td>\n</tr>\n";
+    }
+    output << "<tr class=\"info\">\n<th>Accuracy:</th>\n";
+    output << "<td>" << stats.accuracy << "%</td>\n</tr>\n";
+    output << "</tbody>\n</table>\n</div>\n<br>\n";
+}
+
+void KNN::generateHTML() {
+	ofstream output("html/report.html");
+	string header = loadHTMLHeader();
+	if (header != "") {
+		output << header;
+		generateICTable(output);
+		generateCMTable(output);
+		generateStatsReport(output);
+		output << "</body>\n</html>";
+	}
+	cerr << endl << "Report generated!" << endl;
+	system("firefox html/report.html");
+
+	output.close();
 }
 
 ////////////////////// CLASS Configuration
