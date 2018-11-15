@@ -10,6 +10,7 @@
 #include <tuple>
 #include <cmath>
 #include <map>
+#include <ctime>
 
 using namespace std;
 
@@ -189,11 +190,11 @@ Statistics::Statistics(int** confusionMatrix, int classCount) {
 	accuracy = 100 * num / den;
 
 	for (int i = 0; i < classCount; i++) {
-		float auxR = confusionMatrix[i][i] / recall[i];
-		float auxP = confusionMatrix[i][i] / precision[i];
+		float auxR = (recall[i] != 0) ? (confusionMatrix[i][i] / recall[i]) : (0); 
+		float auxP = (precision[i] != 0) ? (confusionMatrix[i][i] / precision[i]) : (0);
 		recall[i] = auxR * 100;
 		precision[i] = auxP * 100;
-		f1Score[i] = 200 * (auxR * auxP) / (auxR + auxP);
+		f1Score[i] = (auxP + auxR != 0) ? (200 * (auxR * auxP) / (auxR + auxP)) : (0);
 	}
 }
 
@@ -303,7 +304,7 @@ void KNN::loadFile(string fileName, int instCount, float ratio) {
 	}
 	input.close();
 	srand(time(NULL));
-	for (int trainingCount = instCount * ratio; trainingCount > 0; trainingCount--) {
+	for (int trainingCount = instCount * ratio; trainingCount >= 0; trainingCount--) {
 		int pos = rand() % instances.size();
 		trainingSamples.push_back(instances[pos]);
 		instances.erase(instances.begin() + pos);
@@ -397,6 +398,9 @@ string KNN::classify(Instance& instance) {
 }
 
 string KNN::classify(Instance& instance, int nnCount) {
+	if (nnCount > trainingSamples.size()) {
+		nnCount = trainingSamples.size();
+	}
 	tuple<int, float>* distances = new tuple<int, float>[trainingSamples.size()];
 	for (int i = 0; i < trainingSamples.size(); i++) {
 		distances[i] = make_tuple(i, 
@@ -418,19 +422,23 @@ void KNN::classifyAllTests() {
 }
 
 void KNN::classifyAllTests(int nnCount) {
-	int updateInterval = testingInstances.size()/30;
 	int intervalCount = 1;
+	int percentageCount = 10;
 	for (int i = 0; i < testingInstances.size(); i++) {
 		classify(testingInstances[i], nnCount);
-		if (i > updateInterval * intervalCount) {
-			if (intervalCount % 3 != 0) {
-				cerr << ".";
+		float num = i;
+		float den = testingInstances.size();
+		if (num / den > (0.1 * (float)intervalCount) / 3.0) {
+			if (intervalCount % 3 == 0) {
+				cerr << percentageCount << "%";
+				percentageCount += 10;
 			} else {
-				cerr << intervalCount * 10 / 3 << "%";
+				cerr << ".";
 			}
 			intervalCount++;
 		}
 	}
+	cerr << "100% ";
 	generateConfusionMatrix();
 }
 
