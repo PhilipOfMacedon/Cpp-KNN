@@ -11,6 +11,7 @@
 #include <cmath>
 #include <map>
 #include <ctime>
+#include <vector>
 
 using namespace std;
 
@@ -592,7 +593,7 @@ void KNN::generateHTML() {
 	}
 	cerr << endl << "Report generated!" << endl;
 	output.close();
-	system("firefox html/report.html");
+	system("firefox html/report.html &");
 }
 
 ////////////////////// CLASS Configuration
