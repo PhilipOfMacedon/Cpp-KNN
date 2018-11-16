@@ -591,9 +591,8 @@ void KNN::generateHTML() {
 		output << "</body>\n</html>";
 	}
 	cerr << endl << "Report generated!" << endl;
-	system("firefox html/report.html");
-
 	output.close();
+	system("firefox html/report.html");
 }
 
 ////////////////////// CLASS Configuration
