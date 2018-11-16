@@ -503,7 +503,7 @@ void KNN::generateCMTable(ofstream& output) {
 			if (i == j) {
 				output << " class=\"success\">";
 			} else {
-				output << ">";
+				output << " class=\"danger\">";
 			}
 			output << confusionMatrix[i][j] << "</td>\n";
 		}
